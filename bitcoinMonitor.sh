@@ -1,27 +1,66 @@
 #!/bin/bash
-# Script to monitor all known bitcoin addresses related to wannacry ramsonware
-# Checks transaction, bitcoins sent/received and final balace both in bitcoins
-# and in your preferred currecy
+# Script to monitor bitcoin addresses, for example addreses related to ransomware campaigns
+# You have wannacry.txt and notPetya.txt as inputs in this repository
+# Checks transactions, bitcoins sent/received and final balace both in bitcoins
+# and in your preferred currency
+
+accum=0
+tran=0
+us=-1
+
+function usage()
+{
+	if [ $us -eq 0 ];
+	then
+		echo Usage: $0 inputFile [currency]	
+	fi
+}
+
+function satoshiToBTC()
+{
+	bc -l <<< "scale=8; $1/100000000"
+}
 
 if [ $# -eq 0 ];
+then
+	echo Missing parameters
+	us=$(echo $us + 1|bc)
+	usage
+	exit -1
+fi
+
+if [ $# -eq 1 ];
 then
 	cur=EUR	# EDIT THIS TO CHANGE CURRENCY 
 		# SHOULD BE REPLACED BY A VALID ISO 4217 CURRENCY CODE
 	echo No currency supplied, using $cur by default.
-	echo Usage: $0 [currency]
+	us=$(echo $us + 1|bc)
+	usage
 else
-	cur=$1
+	cur=$2
+	toc=$(wget -q -O - "https://blockchain.info/tobtc?currency=$cur&value=1")
+	echo $toc
+	if [ "$toc" == "" ];
+	then
+		echo Unknown currency code
+		us=$(echo $us + 1|bc)
+		usage
+		exit -1
+	fi
 fi
-dir1=13AM4VW2dhxYgXeQepoHkHSQuy6NgaEb94
-dir2=12t9YDPgwueZ9NyMgw519p7AA8isjr6SMw
-dir3=115p7UMMngoj1pMvkpHijcRdfJNXj6LrLn
-accum=0
-tran=0
 
-function satoshiToBTC(){
-	bc -l <<< "scale=8; $1/100000000"
-}
-for i in $dir1 $dir2 $dir3; do
+ls $1 &>/dev/null
+if [ $? != 0 ];
+then
+	echo Input file not found
+	us=$(echo $us + 1|bc)
+	usage
+	exit -1
+fi
+
+readarray array < $1
+for i in ${array[@]}; 
+do
 	echo -e Address:'\t\t\t'$i
 	a=$(satoshiToBTC $(wget -q -O - https://blockchain.info/q/getreceivedbyaddress/$i))
 	echo -e Bitcoins Received:'\t\t'$a  
@@ -36,8 +75,8 @@ for i in $dir1 $dir2 $dir3; do
 	tran=$(echo $tran + $d|bc)
 done
 printf "\n"
+echo $accum
 echo --------------------------------TOTAL--------------------------------------
-toc=$(wget -q -O - "https://blockchain.info/tobtc?currency=$cur&value=1")
 echo -e BTC: '\t\t\t\t' $accum 
 echo -e $cur: '\t\t\t\t'  $(bc <<< "scale=2; $accum / $toc")
 echo -e Transactions: '\t\t\t' $tran
