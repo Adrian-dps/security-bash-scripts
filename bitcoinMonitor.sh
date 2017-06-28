@@ -33,13 +33,13 @@ if [ $# -eq 1 ];
 then
 	cur=EUR	# EDIT THIS TO CHANGE CURRENCY 
 		# SHOULD BE REPLACED BY A VALID ISO 4217 CURRENCY CODE
+	toc=$(wget -q -O - "https://blockchain.info/tobtc?currency=$cur&value=1")
 	echo No currency supplied, using $cur by default.
 	us=$(echo $us + 1|bc)
 	usage
 else
 	cur=$2
 	toc=$(wget -q -O - "https://blockchain.info/tobtc?currency=$cur&value=1")
-	echo $toc
 	if [ "$toc" == "" ];
 	then
 		echo Unknown currency code
