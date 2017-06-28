@@ -75,7 +75,6 @@ do
 	tran=$(echo $tran + $d|bc)
 done
 printf "\n"
-echo $accum
 echo --------------------------------TOTAL--------------------------------------
 echo -e BTC: '\t\t\t\t' $accum 
 echo -e $cur: '\t\t\t\t'  $(bc <<< "scale=2; $accum / $toc")
